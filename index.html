@@ -230,6 +230,31 @@
 
   var code = (q("f") || (location.hash||"").replace(/^#f=/,"") || "").toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,8);
   var p = FILES[code] || null;
+
+  // Self-contained links: ?d=address~city~zip~price~dom~beds~baths~sqft[~status]
+  // Lets a printed code carry its own property data so this file never needs updating
+  // for a new mailing. The FILES table above still serves every code already mailed.
+  (function(){
+    var d = q("d");
+    if (!d) return;
+    var f = String(d).split(d.indexOf("~") >= 0 ? "~" : "|");
+    if (f.length < 8) return;
+    var price = parseInt(f[3], 10), sqft = parseInt(f[7], 10), dom = parseInt(f[4], 10);
+    if (!(price > 0) || !(sqft > 0) || !(dom >= 0)) return;
+    p = {
+      address: f[0].trim(),
+      city:    f[1].trim(),
+      zip:     f[2].trim(),
+      price:   price,
+      dom:     dom,
+      beds:    f[5].trim(),
+      baths:   f[6].trim(),
+      sqft:    sqft,
+      ppsf:    Math.round(price / sqft * 100) / 100,
+      status:  ({H:"Withdrawn Temp Off Market", E:"Expired", R:"Expired/Re-List",
+                 C:"Cancelled"}[(f[8]||"").trim().toUpperCase()] || "Withdrawn")
+    };
+  })();
   var addressLine = "";
 
   if (p) {
